@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import { DailyBriefingCard } from "@/components/home/DailyBriefingCard";
 import { PriorityInboxPreview } from "@/components/home/PriorityInboxPreview";
 import { QuickStats } from "@/components/home/QuickStats";
+import { Card } from "@/components/ui/card";
 import { useAuthStore } from "@/store/useAuthStore";
 import { api } from "@/lib/api";
 
@@ -86,7 +87,7 @@ export default function Home() {
         <Suspense fallback={<div className="h-48 bg-zinc-900 rounded-lg animate-pulse" />}>
           <PriorityInboxPreview />
         </Suspense>
-        
+
         {/* Quick Actions */}
         {stats && stats.total_things > 0 && (
           <motion.div
