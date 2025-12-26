@@ -1,0 +1,15 @@
+fastapi
+uvicorn
+google-auth-oauthlib
+google-auth-httplib2
+google-api-python-client
+beautifulsoup4
+psycopg2-binary
+sqlalchemy[asyncio]
+python-dotenv
+asyncpg
+pydantic-settings
+pgvector
+google-genai
+pymupdf
+python-docx
