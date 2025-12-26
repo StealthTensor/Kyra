@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import MobileLayout from "@/components/layout/MobileLayout";
 import AuthSync from "@/components/AuthSync";
 import { Toaster } from "@/components/ui/sonner";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -47,10 +48,12 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-zinc-950 text-white`}
       >
-        <AuthSync>
-          <MobileLayout>{children}</MobileLayout>
-          <Toaster />
-        </AuthSync>
+        <ErrorBoundary>
+          <AuthSync>
+            {children}
+            <Toaster />
+          </AuthSync>
+        </ErrorBoundary>
       </body>
     </html>
   );

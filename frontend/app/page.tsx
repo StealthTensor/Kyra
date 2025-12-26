@@ -1,41 +1,32 @@
 "use client";
 
-import { motion } from 'framer-motion';
-import { DailyBriefingCard } from "@/components/home/DailyBriefingCard";
-import { PriorityInboxPreview } from "@/components/home/PriorityInboxPreview";
-import { QuickStats } from "@/components/home/QuickStats";
-import { useAuthStore } from "@/store/useAuthStore";
+import Link from "next/link";
+import { ArrowRight } from "lucide-react";
 
-export default function Home() {
-  const { user } = useAuthStore();
-  const userName = user?.name?.split(' ')[0] || "Trinai";
-
+export default function LandingPage() {
   return (
-    <div className="p-4 space-y-6 pt-12 pb-24 max-w-md mx-auto">
-      {/* Top Section */}
-      <motion.div
-        initial={{ opacity: 0, x: -20 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ duration: 0.5 }}
-        className="space-y-1"
-      >
-        <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-zinc-400">
-          Good Morning, {userName}.
+    <div className="flex flex-col items-center justify-center min-h-screen p-8 text-center bg-zinc-950 space-y-8">
+      <div className="space-y-4 max-w-lg">
+        <h1 className="text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-zinc-500">
+          Kyra AI
         </h1>
-        <p className="text-zinc-400 text-sm">
-          Kyra has <span className="text-white font-medium">3 things</span> for you today.
+        <p className="text-zinc-400 text-lg">
+          The B2B Native AI Email Operating System.
+          <br />
+          Reclaim your inbox, automate your workflow.
         </p>
-      </motion.div>
+      </div>
 
-      {/* Daily Briefing */}
-      <section>
-        <DailyBriefingCard />
-      </section>
-
-      {/* Quick Stats & Priority Inbox Grid or Stack */}
-      <div className="space-y-6">
-        <QuickStats />
-        <PriorityInboxPreview />
+      <div className="flex flex-col gap-4 w-full max-w-sm">
+        <Link href="/auth/login">
+          <button className="w-full bg-white text-zinc-950 font-medium py-3 px-4 rounded-xl flex items-center justify-center gap-2 hover:bg-zinc-200 transition-colors">
+            Login
+            <ArrowRight size={18} />
+          </button>
+        </Link>
+        <div className="text-xs text-zinc-600">
+          By logging in, you agree to our Terms of Service.
+        </div>
       </div>
     </div>
   );

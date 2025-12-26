@@ -28,7 +28,7 @@ function CallbackContent() {
                 token
             );
             toast.success("Login successful");
-            router.push("/mail");
+            router.push("/app/dashboard");
         } else {
             // toast.error("Invalid login callback");
             // router.push("/auth/login");

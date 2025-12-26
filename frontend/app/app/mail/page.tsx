@@ -5,20 +5,8 @@ import { FilterPills } from "@/components/mail/FilterPills";
 import { EmailCard } from "@/components/mail/EmailCard";
 import { EmailDetailDrawer } from "@/components/mail/EmailDetailDrawer";
 import { motion } from "framer-motion";
-import { useEmailStore } from "@/store/useEmailStore";
+import { useEmailStore, Email } from "@/store/useEmailStore";
 import { useAuthStore } from "@/store/useAuthStore";
-
-// Types
-interface Email {
-    id: number;
-    subject: string;
-    sender: string;
-    preview: string;
-    time: string;
-    type: string; // 'Urgent', 'Important', 'FYI'
-    thread_summary?: string;
-    why_here?: string;
-}
 
 export default function MailPage() {
     const [selectedEmail, setSelectedEmail] = useState<any | null>(null);
@@ -31,12 +19,12 @@ export default function MailPage() {
 
     const filteredEmails = emails; // Store handles filtering via fetch, or we can filter locally if we fetch 'All'
 
-    const handleArchive = (id: string | number) => {
+    const handleArchive = (id: string) => {
         // Optimistic UI update handled by store
-        // useEmailStore.getState().archiveEmail(String(id));
+        // useEmailStore.getState().archiveEmail(id);
     };
 
-    const handleReply = (id: string | number) => {
+    const handleReply = (id: string) => {
         console.log("Reply to", id);
     };
 

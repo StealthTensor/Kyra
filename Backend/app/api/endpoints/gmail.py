@@ -112,13 +112,31 @@ async def list_messages(
             "from": e.sender,
             "snippet": e.body_plain[:200] if e.body_plain else "",
             "timestamp": e.received_at.isoformat() if e.received_at else "",
-            "isRead": False, # Future: Add is_read to DB model. For MVP, assume unread.
+            "isRead": e.is_read if e.is_read is not None else False,
             "labels": [e.category] if e.category else [],
             "score": e.importance_score,
             "summary": e.explanation
         }
         for e in emails
     ]
+
+@router.post("/suggest-reply")
+async def suggest_reply_endpoint(
+    email_id: str,
+    tone: str = "Professional",
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Suggest an auto-reply for an email.
+    """
+    try:
+        from app.services.auto_reply_service import auto_reply_service
+        result = await auto_reply_service.suggest_reply(db, email_id, tone)
+        return result
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/messages/{message_id}")
 async def get_message(message_id: str, db: AsyncSession = Depends(get_db)):
@@ -158,5 +176,41 @@ async def get_message(message_id: str, db: AsyncSession = Depends(get_db)):
         "category": email.category,
         "score": email.importance_score,
         "explanation": email.explanation,
-        "analysis": email.explanation 
+        "analysis": email.explanation,
+        "isRead": email.is_read if email.is_read is not None else False
     }
+
+@router.patch("/messages/{message_id}/read")
+async def mark_email_as_read(
+    message_id: str,
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Mark an email as read.
+    """
+    from app.db.models import Email
+    
+    try:
+        import uuid
+        try:
+            uuid.UUID(message_id)
+            query = select(Email).where(Email.id == message_id)
+        except ValueError:
+            query = select(Email).where(Email.gmail_id == message_id)
+        
+        result = await db.execute(query)
+        email = result.scalars().first()
+        
+        if not email:
+            raise HTTPException(status_code=404, detail="Email not found")
+        
+        email.is_read = True
+        await db.commit()
+        await db.refresh(email)
+        
+        return {"status": "marked_as_read", "id": str(email.id)}
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error marking email as read: {e}")
+        raise HTTPException(status_code=500, detail=str(e))

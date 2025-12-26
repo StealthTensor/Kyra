@@ -30,7 +30,7 @@ export default function AuthSync({ children }: { children: React.ReactNode }) {
         }
 
         if (isAuthenticated && isAuthPage) {
-            router.push("/mail");
+            router.push("/app/dashboard");
         }
     }, [isAuthenticated, pathname, router]);
 

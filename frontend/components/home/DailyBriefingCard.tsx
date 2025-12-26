@@ -1,16 +1,27 @@
 "use client";
 
+import { useEffect } from "react";
 import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowRight, AlertCircle } from "lucide-react";
+import { ArrowRight, AlertCircle, RefreshCw } from "lucide-react";
+import { useDigestStore } from "@/store/useDigestStore";
+import { useAuthStore } from "@/store/useAuthStore";
 
 export function DailyBriefingCard() {
-    // Mock data for now, eventually will fetch from DailyDigest API
-    const briefingItems = [
-        { id: 1, text: "Project 'Titan' proposal due by 5 PM", type: "deadline" },
-        { id: 2, text: "Lab meeting at 2 PM", type: "event" },
-        { id: 3, text: "Review SRM budget report", type: "task" },
-    ];
+    const { digest, isLoading, fetchLatestDigest, generateDigest } = useDigestStore();
+    const { user } = useAuthStore();
+
+    useEffect(() => {
+        if (user?.email) {
+            fetchLatestDigest(user.email);
+        }
+    }, [user?.email, fetchLatestDigest]);
+
+    const handleGenerate = () => {
+        if (user?.id && user?.email) {
+            generateDigest(user.id, user.email);
+        }
+    };
 
     return (
         <motion.div
@@ -22,29 +33,42 @@ export function DailyBriefingCard() {
                 <div className="absolute top-0 right-0 p-3 opacity-10">
                     <AlertCircle size={80} />
                 </div>
-                <CardHeader className="pb-2">
+                <CardHeader className="pb-2 flex flex-row items-center justify-between">
                     <CardTitle className="text-lg font-medium text-zinc-300">Daily Briefing</CardTitle>
+                    <button
+                        onClick={handleGenerate}
+                        disabled={isLoading}
+                        className="text-zinc-500 hover:text-white transition-colors disabled:opacity-50"
+                    >
+                        <RefreshCw size={14} className={isLoading ? "animate-spin" : ""} />
+                    </button>
                 </CardHeader>
                 <CardContent>
-                    <ul className="space-y-3">
-                        {briefingItems.map((item, index) => (
-                            <motion.li
-                                key={item.id}
-                                initial={{ opacity: 0, x: -10 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                transition={{ delay: 0.2 + index * 0.1 }}
-                                className="flex items-start gap-3 p-3 rounded-lg bg-zinc-900/50 border border-zinc-800/50"
+                    {digest ? (
+                        <div className="prose prose-invert prose-sm max-h-60 overflow-y-auto no-scrollbar">
+                            <div className="whitespace-pre-line text-sm text-zinc-300 leading-relaxed">
+                                {digest}
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="flex flex-col items-center justify-center py-6 text-zinc-500 text-sm">
+                            <p>No briefing available yet.</p>
+                            <button
+                                onClick={handleGenerate}
+                                className="mt-2 text-indigo-400 hover:text-indigo-300 underline"
                             >
-                                <div className="h-2 w-2 mt-2 rounded-full bg-orange-500 shrink-0" />
-                                <span className="text-sm text-zinc-300 leading-snug">{item.text}</span>
-                            </motion.li>
-                        ))}
-                    </ul>
-                    <div className="mt-4 flex justify-end">
-                        <button className="text-xs text-zinc-400 hover:text-white flex items-center gap-1 transition-colors">
-                            View full report <ArrowRight size={12} />
-                        </button>
-                    </div>
+                                Generate Now
+                            </button>
+                        </div>
+                    )}
+
+                    {digest && (
+                        <div className="mt-4 flex justify-end">
+                            <button className="text-xs text-zinc-400 hover:text-white flex items-center gap-1 transition-colors">
+                                View full report <ArrowRight size={12} />
+                            </button>
+                        </div>
+                    )}
                 </CardContent>
             </Card>
         </motion.div>

@@ -75,10 +75,8 @@ export function EmailDetailDrawer({ email, onClose }: EmailDetailDrawerProps) {
                             {/* Email Body */}
                             <div className="text-zinc-300 text-sm leading-relaxed space-y-4">
                                 {/* Placeholder for body content split by paragraphs */}
-                                <p>{email.thread_summary || email.preview}</p>
-                                <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam.</p>
-                                <p>Best regards,</p>
-                                <p>{email.sender}</p>
+                                <p>{email.thread_summary}</p>
+                                <p className="mt-4 whitespace-pre-wrap">{email.full_body || email.preview}</p>
                             </div>
                         </div>
 

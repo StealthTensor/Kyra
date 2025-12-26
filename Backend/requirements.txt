@@ -13,3 +13,8 @@ pgvector
 google-genai
 pymupdf
 python-docx
+python-jose[cryptography]
+passlib[bcrypt]
+slowapi
+pydantic[email]
+alembic

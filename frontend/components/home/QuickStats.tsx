@@ -1,11 +1,39 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
+import { useAuthStore } from "@/store/useAuthStore";
+import { api } from "@/lib/api";
+
+interface DashboardStats {
+    inbox_health: number;
+    total_unread: number;
+}
 
 export function QuickStats() {
-    const progress = 85;
-    const circumference = 2 * Math.PI * 24; // r=24
+    const { user } = useAuthStore();
+    const [stats, setStats] = useState<DashboardStats | null>(null);
+
+    useEffect(() => {
+        if (!user?.email) return;
+
+        const fetchStats = async () => {
+            try {
+                const response = await api.get(`/dashboard/stats?email=${encodeURIComponent(user.email)}`);
+                setStats(response.data);
+            } catch (error) {
+                console.error("Failed to fetch stats:", error);
+            }
+        };
+
+        fetchStats();
+    }, [user?.email]);
+
+    const progress = stats?.inbox_health ?? 0;
+    const unreadCount = stats?.total_unread ?? 0;
+
+    const circumference = 2 * Math.PI * 24;
     const offset = circumference - (progress / 100) * circumference;
 
     return (
@@ -17,11 +45,10 @@ export function QuickStats() {
             <Card className="bg-gradient-to-br from-indigo-900/20 to-purple-900/20 border-zinc-800">
                 <CardContent className="p-4 flex items-center justify-between">
                     <div>
-                        <h3 className="text-sm font-medium text-zinc-300">Inbox Zero</h3>
-                        <p className="text-xs text-zinc-500">Keep it up, you're close!</p>
+                        <h3 className="text-sm font-medium text-zinc-300">Inbox Health</h3>
+                        <p className="text-xs text-zinc-500">{unreadCount} unread items</p>
                     </div>
                     <div className="relative w-16 h-16 flex items-center justify-center">
-                        {/* Background Circle */}
                         <svg className="w-full h-full transform -rotate-90">
                             <circle
                                 cx="32"
@@ -31,7 +58,6 @@ export function QuickStats() {
                                 strokeWidth="6"
                                 fill="transparent"
                             />
-                            {/* Progress Circle */}
                             <circle
                                 cx="32"
                                 cy="32"

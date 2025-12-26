@@ -1,20 +1,30 @@
-from sqlalchemy import Column, String, Integer, DateTime, ForeignKey, Boolean, Text, Float, func, Date
+from sqlalchemy import Column, String, Integer, DateTime, ForeignKey, Boolean, Text, Float, func, Date, Enum
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 from pgvector.sqlalchemy import Vector
 from sqlalchemy.orm import relationship, declarative_base
 import uuid
+import enum
 
 Base = declarative_base()
+
+class OrganizationRole(enum.Enum):
+    owner = "owner"
+    admin = "admin"
+    member = "member"
+    viewer = "viewer"
 
 class User(Base):
     __tablename__ = "users"
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     email = Column(String, unique=True, nullable=False)
+    name = Column(String, nullable=True)
+    avatar = Column(String, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     
     accounts = relationship("Account", back_populates="user")
     memories = relationship("AgentMemory", back_populates="user")
     conversations = relationship("Conversation", back_populates="user")
+    user_organizations = relationship("UserOrganization", back_populates="user")
 
 class Account(Base):
     __tablename__ = "accounts"
@@ -45,6 +55,7 @@ class Email(Base):
     explanation = Column(Text)
     confidence = Column(Float)
     embedding = Column(Vector(768)) # pgvector
+    is_read = Column(Boolean, default=False)
     
     account = relationship("Account", back_populates="emails")
     interactions = relationship("Interaction", back_populates="email")
@@ -137,3 +148,23 @@ class Task(Base):
     email = relationship("Email")
 
 User.tasks = relationship("Task", back_populates="user")
+
+class Organization(Base):
+    __tablename__ = "organizations"
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    name = Column(String, nullable=False)
+    plan_type = Column(String, default="free")
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    
+    user_organizations = relationship("UserOrganization", back_populates="organization")
+
+class UserOrganization(Base):
+    __tablename__ = "user_organizations"
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
+    organization_id = Column(UUID(as_uuid=True), ForeignKey("organizations.id"), nullable=False)
+    role = Column(Enum(OrganizationRole), nullable=False, default=OrganizationRole.member)
+    joined_at = Column(DateTime(timezone=True), server_default=func.now())
+    
+    user = relationship("User", back_populates="user_organizations")
+    organization = relationship("Organization", back_populates="user_organizations")

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -13,28 +13,42 @@ export default function LoginPage() {
     const login = useAuthStore((state) => state.login);
     const router = useRouter();
     const searchParams = useSearchParams();
-    const from = searchParams.get("from") || "/mail";
+    const from = searchParams.get("from") || "/app/dashboard";
 
-    const handleLogin = async (e: React.FormEvent) => {
-        e.preventDefault();
+    const handleLogin = (e?: React.FormEvent) => {
+        if (e) e.preventDefault();
         setIsLoading(true);
-
-        // Simulate API call
-        setTimeout(() => {
-            login(
-                {
-                    id: "usr_123",
-                    name: "Kyra User",
-                    email: "demo@kyra.ai",
-                    avatar: "https://github.com/shadcn.png",
-                },
-                "jwt_token_simulated_12345"
-            );
-
-            toast.success("Welcome back to Kyra");
-            router.push(from);
-        }, 1000);
+        // Redirect to Backend Auth
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
+        window.location.href = `${apiUrl}/auth/login`;
     };
+
+    useEffect(() => {
+        const token = searchParams.get("token");
+        const callbackSuccess = searchParams.get("callback_success");
+
+        if (callbackSuccess === "true" && token) {
+            const user = {
+                id: searchParams.get("user_id") || "",
+                name: searchParams.get("name") || "",
+                email: searchParams.get("email") || "",
+                avatar: searchParams.get("avatar") || "",
+            };
+
+            login(user, token);
+            toast.success(`Welcome back, ${user.name} `);
+            
+            const onboardingCompleted = localStorage.getItem("onboarding_completed");
+            if (onboardingCompleted !== "true") {
+                router.push("/onboarding");
+            } else {
+                router.push(from);
+            }
+        } else if (searchParams.get("error")) {
+            toast.error("Authentication failed");
+            setIsLoading(false);
+        }
+    }, [searchParams, login, router, from]);
 
     return (
         <div className="flex h-screen w-full items-center justify-center bg-zinc-950 p-4">
@@ -90,7 +104,7 @@ export default function LoginPage() {
                 <Button
                     variant="outline"
                     className="w-full border-zinc-800 bg-transparent text-white hover:bg-zinc-800"
-                    onClick={() => toast.info("Google OAuth not configured in demo")}
+                    onClick={() => handleLogin()}
                 >
                     <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
                         <path

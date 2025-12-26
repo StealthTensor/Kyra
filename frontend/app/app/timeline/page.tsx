@@ -3,6 +3,9 @@
 import { motion } from "framer-motion";
 import { format } from "date-fns";
 import { Calendar, CheckCircle2, Clock, AlertTriangle } from "lucide-react";
+import { useTimelineStore } from "@/store/useTimelineStore";
+import { useAuthStore } from "@/store/useAuthStore";
+import { useEffect } from "react";
 
 interface TimelineItem {
     id: number;
@@ -14,16 +17,17 @@ interface TimelineItem {
     duration?: string; // for events
 }
 
+
+
 export default function TimelinePage() {
-    // Mock Data - mixed tasks and events
-    const timelineItems: TimelineItem[] = [
-        { id: 1, title: "Morning Standup", time: "10:00 AM", type: "event", duration: "30m", status: "completed" },
-        { id: 2, title: "Review PR #402", time: "10:30 AM", type: "task", status: "pending" },
-        { id: 3, title: "Lunch with Sarah", time: "12:00 PM", type: "event", duration: "1h", status: "pending" },
-        { id: 4, title: "Submit Project Titan", time: "02:00 PM", type: "task", status: "conflict", conflictReason: "Overlaps with Lab Meeting" },
-        { id: 5, title: "Lab Meeting", time: "02:00 PM", type: "event", duration: "1h", status: "pending" },
-        { id: 6, title: "Email Catchup", time: "04:00 PM", type: "task", status: "pending" },
-    ];
+    const { tasks: timelineItems, fetchTasks, isLoading } = useTimelineStore();
+    const { user } = useAuthStore();
+
+    useEffect(() => {
+        if (user?.email) {
+            fetchTasks(user.email);
+        }
+    }, [user?.email, fetchTasks]);
 
     const today = new Date();
 
@@ -60,12 +64,12 @@ export default function TimelinePage() {
                             >
                                 {/* Dot */}
                                 <div className={`absolute left-0 top-1.5 w-3 h-3 rounded-full border-2 ${item.status === 'conflict' ? 'bg-orange-500 border-orange-500' :
-                                        item.status === 'completed' ? 'bg-zinc-800 border-zinc-600' : 'bg-zinc-950 border-indigo-500'
+                                    item.status === 'completed' ? 'bg-zinc-800 border-zinc-600' : 'bg-zinc-950 border-indigo-500'
                                     } z-10`} />
 
                                 {/* Card */}
                                 <div className={`p-4 rounded-xl border ${item.status === 'conflict' ? 'bg-orange-950/20 border-orange-500/20' :
-                                        'bg-zinc-900/50 border-zinc-800'
+                                    'bg-zinc-900/50 border-zinc-800'
                                     }`}>
                                     <div className="flex justify-between items-start mb-1">
                                         <span className={`text-xs font-semibold ${item.status === 'conflict' ? 'text-orange-400' : 'text-indigo-400'

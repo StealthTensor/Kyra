@@ -1,8 +1,9 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, and_
-from app.db.models import Email, DailyDigest, Task
+from app.db.models import Email, DailyDigest, Task, Account
 from app.services.brain import brain_service
 from app.services.gmail import gmail_service
+from app.services.calendar_service import calendar_service
 import datetime
 
 class DigestService:
@@ -17,7 +18,7 @@ class DigestService:
             .where(
                 and_(
                     Email.received_at >= yesterday,
-                    Email.importance_score >= 70 # Arbitrary threshold for "Important"
+                    Email.importance_score >= 70
                 )
             )
             .join(Email.account)
@@ -33,11 +34,29 @@ class DigestService:
         tasks = result.scalars().all()
         
         # 3. Fetch Calendar Events (Today)
-        # Need to re-instantiate credentials or use CalendarService. 
-        # For now, we'll skip live calendar fetch inside this service or mock it, 
-        # assuming CalendarService is available. 
-        # Let's import CalendarService if possible, or leave it for now.
-        # Simplification: Only use Email + Tasks for MVP Digest
+        calendar_events = []
+        result = await db.execute(select(Account).where(Account.user_id == user_id))
+        account = result.scalars().first()
+        
+        if account and account.access_token and account.refresh_token:
+            try:
+                events = calendar_service.list_upcoming_events(
+                    account.access_token,
+                    account.refresh_token,
+                    days=1
+                )
+                today = datetime.datetime.now().date()
+                for event in events:
+                    start = event.get('start', {}).get('dateTime') or event.get('start', {}).get('date')
+                    if start:
+                        try:
+                            event_date = datetime.datetime.fromisoformat(start.replace('Z', '+00:00')).date()
+                            if event_date == today:
+                                calendar_events.append(event)
+                        except:
+                            pass
+            except Exception as e:
+                print(f"Error fetching calendar events for digest: {e}")
         
         context = "Here are the important updates for today:\n\n"
         
@@ -51,7 +70,24 @@ class DigestService:
         if not tasks:
             context += "No pending tasks.\n"
         for task in tasks:
-            context += f"- {task.description} (Priority: {task.priority})\n"
+            due_info = f" (Due: {task.due_date.strftime('%Y-%m-%d')})" if task.due_date else ""
+            context += f"- {task.description} (Priority: {task.priority}){due_info}\n"
+        
+        context += "\nCALENDAR EVENTS (TODAY):\n"
+        if not calendar_events:
+            context += "No calendar events today.\n"
+        for event in calendar_events:
+            summary = event.get('summary', 'Untitled Event')
+            start = event.get('start', {}).get('dateTime') or event.get('start', {}).get('date', '')
+            if start:
+                try:
+                    start_dt = datetime.datetime.fromisoformat(start.replace('Z', '+00:00'))
+                    time_str = start_dt.strftime('%I:%M %p')
+                except:
+                    time_str = start
+            else:
+                time_str = "All day"
+            context += f"- {summary} at {time_str}\n"
             
         # Generate Digest
         digest_content = brain_service.generate_digest(context)

@@ -6,7 +6,7 @@ export function middleware(request: NextRequest) {
     const isAuthPage = request.nextUrl.pathname.startsWith('/auth');
 
     // Protect strict B2B routes
-    const protectedPaths = ['/mail', '/chat', '/timeline'];
+    const protectedPaths = ['/app/'];
     const isProtectedPath = protectedPaths.some((path) =>
         request.nextUrl.pathname.startsWith(path)
     );
@@ -19,12 +19,12 @@ export function middleware(request: NextRequest) {
 
     // Redirect authenticated users away from login
     if (isAuthPage && token) {
-        return NextResponse.redirect(new URL('/mail', request.url));
+        return NextResponse.redirect(new URL('/app/dashboard', request.url));
     }
 
     return NextResponse.next();
 }
 
 export const config = {
-    matcher: ['/mail/:path*', '/chat/:path*', '/timeline/:path*', '/auth/:path*'],
+    matcher: ['/app/:path*', '/mail/:path*', '/chat/:path*', '/timeline/:path*', '/auth/:path*'],
 };

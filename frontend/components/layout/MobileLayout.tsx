@@ -18,10 +18,10 @@ export default function MobileLayout({ children }: { children: React.ReactNode }
     };
 
     const navItems = [
-        { name: 'Home', icon: Home, path: '/' },
-        { name: 'Mail', icon: Mail, path: '/mail' },
-        { name: 'Kyra', icon: MessageSquare, path: '/chat' },
-        { name: 'Timeline', icon: Calendar, path: '/timeline' },
+        { name: 'Home', icon: Home, path: '/app/dashboard' },
+        { name: 'Mail', icon: Mail, path: '/app/mail' },
+        { name: 'Kyra', icon: MessageSquare, path: '/app/chat' },
+        { name: 'Timeline', icon: Calendar, path: '/app/timeline' },
     ];
 
     return (

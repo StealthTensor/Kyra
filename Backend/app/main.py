@@ -1,21 +1,43 @@
+import os
+import logging
 from fastapi import FastAPI, Depends, Request
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.exceptions import RequestValidationError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import text
 from app.core.config import settings
+from app.core.logging_config import setup_logging
 from app.db.session import get_db
 from app.services.gmail import gmail_service
 from app.services.brain import brain_service
 
+setup_logging()
+logger = logging.getLogger(__name__)
+
 app = FastAPI(title=settings.PROJECT_NAME)
 
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    logger.error(f"Unhandled exception: {exc}", exc_info=True)
+    return JSONResponse(
+        status_code=500,
+        content={"error": "Internal server error", "detail": str(exc) if settings.DEBUG else "An unexpected error occurred"}
+    )
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    logger.warning(f"Validation error: {exc.errors()}")
+    return JSONResponse(
+        status_code=422,
+        content={"error": "Validation error", "details": exc.errors()}
+    )
+
 # Set up CORS
-origins = [
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-    "https://kyra.ai", # Production domain
-]
+cors_origins = os.getenv("CORS_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000").split(",")
+if settings.FRONTEND_URL not in cors_origins:
+    cors_origins.append(settings.FRONTEND_URL)
+origins = cors_origins
 
 app.add_middleware(
     CORSMiddleware,
@@ -25,11 +47,17 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-from app.api.endpoints import interactions, gmail
+from app.api.endpoints import interactions, gmail, digest, tasks, auth, calendar, dashboard, organizations
 from app.api.routers import chat
 app.include_router(interactions.router, prefix=settings.API_V1_STR, tags=["interactions"])
 app.include_router(chat.router, prefix=f"{settings.API_V1_STR}/chat", tags=["chat"])
 app.include_router(gmail.router, prefix=f"{settings.API_V1_STR}/gmail", tags=["gmail"])
+app.include_router(digest.router, prefix=f"{settings.API_V1_STR}/digest", tags=["digest"])
+app.include_router(tasks.router, prefix=f"{settings.API_V1_STR}/tasks", tags=["tasks"])
+app.include_router(calendar.router, prefix=f"{settings.API_V1_STR}/calendar", tags=["calendar"])
+app.include_router(dashboard.router, prefix=f"{settings.API_V1_STR}/dashboard", tags=["dashboard"])
+app.include_router(organizations.router, prefix=f"{settings.API_V1_STR}/organizations", tags=["organizations"])
+app.include_router(auth.router, prefix=f"{settings.API_V1_STR}/auth", tags=["auth"])
 
 @app.get("/")
 async def root():
@@ -98,13 +126,14 @@ async def callback(code: str, db: AsyncSession = Depends(get_db)):
         await db.commit()
         await db.refresh(account)
         
-        # Redirect to Frontend with User Info
-        # In a real app, generate a JWT here. For MVP, we pass simple user data.
-        frontend_url = "http://localhost:3000/auth/callback"
-        user_param = f"user_id={user.id}&email={email_address}&name={email_address.split('@')[0]}"
-        # For security in prod, use a secure HTTPOnly cookie or hash. 
-        # Here we just pass it to hydrate the store.
-        return RedirectResponse(f"{frontend_url}?{user_param}&token=mvp_token_{user.id}")
+        # Redirect to Frontend with User Info and JWT token
+        from app.core.auth import create_access_token
+        from app.core.config import settings
+        
+        access_token = create_access_token(data={"sub": str(user.id)})
+        frontend_url = f"{settings.FRONTEND_URL}/auth/callback"
+        user_param = f"user_id={user.id}&email={email_address}&name={email_address.split('@')[0]}&token={access_token}"
+        return RedirectResponse(f"{frontend_url}?{user_param}")
 
     except Exception as e:
         print(f"❌ Callback ERROR: {e}")
@@ -323,37 +352,6 @@ async def backfill_embeddings(db: AsyncSession = Depends(get_db)):
     print(f"✅ Backfill complete. Updated {count} emails.")
     return {"message": "Backfill complete", "updated": count}
 
-    print(f"✅ Backfill complete. Updated {count} emails.")
-    return {"message": "Backfill complete", "updated": count}
-
-@app.post(f"{settings.API_V1_STR}/digest/generate")
-async def generate_digest_endpoint(request: Request, db: AsyncSession = Depends(get_db)):
-    """
-    Triggers the generation of the daily digest.
-    Expects JSON body: {"user_id": "...", "email": "..."}
-    """
-    try:
-        data = await request.json()
-        user_id = data.get('user_id')
-        email = data.get('email')
-        
-        # Resolve user_id if not provided (assume single user or look up by email)
-        if not user_id and email:
-             from app.db.models import User
-             from sqlalchemy import select
-             result = await db.execute(select(User).where(User.email == email))
-             user = result.scalars().first()
-             if user:
-                 user_id = user.id
-        
-        if not user_id:
-            return {"error": "user_id or email is required"}
-            
-        digest = await digest_service.generate_daily_digest(db, user_id, email)
-        return {"message": "Digest generated", "content": digest}
-    except Exception as e:
-        import traceback
-        traceback.print_exc()
-        return {"error": str(e)}
+if __name__ == "__main__":
     import uvicorn
     uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=True)

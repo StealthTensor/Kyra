@@ -1,22 +1,36 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { X, Wand2, Send } from "lucide-react"
+import { X, Wand2, Send, Bold, Italic, Underline, Paperclip, XCircle } from "lucide-react"
 import axios from "axios"
+
+interface Attachment {
+    name: string;
+    size: number;
+    file: File;
+}
 
 export function ComposeDrawer({ isOpen, onClose, defaultThreadId, defaultEmail, defaultSubject }: { isOpen: boolean, onClose: () => void, defaultThreadId?: string, defaultEmail?: string, defaultSubject?: string }) {
     const [recipient, setRecipient] = useState("")
     const [subject, setSubject] = useState("")
     const [body, setBody] = useState("")
     const [loading, setLoading] = useState(false)
+    const [attachments, setAttachments] = useState<Attachment[]>([])
+    const fileInputRef = useRef<HTMLInputElement>(null)
 
     // Prompting for draft
     const [promptMode, setPromptMode] = useState(false)
     const [prompt, setPrompt] = useState("")
+    
+    const [formattingButtons, setFormattingButtons] = useState({
+        bold: false,
+        italic: false,
+        underline: false
+    })
 
     useEffect(() => {
         if (isOpen) {
@@ -31,8 +45,9 @@ export function ComposeDrawer({ isOpen, onClose, defaultThreadId, defaultEmail, 
         setLoading(true)
         try {
             const userEmail = localStorage.getItem("user_email") || "me" // Fallback
+            const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
 
-            const res = await axios.post("http://localhost:8000/api/v1/gmail/draft", {
+            const res = await axios.post(`${apiUrl}/gmail/draft`, {
                 thread_id: defaultThreadId,
                 prompt: prompt,
                 tone: "Professional",
@@ -53,7 +68,8 @@ export function ComposeDrawer({ isOpen, onClose, defaultThreadId, defaultEmail, 
         try {
             const userEmail = localStorage.getItem("user_email") || "me"
 
-            await axios.post("http://localhost:8000/api/v1/gmail/send", {
+            const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
+            await axios.post(`${apiUrl}/gmail/send`, {
                 email_address: userEmail,
                 recipient,
                 subject,
@@ -118,12 +134,101 @@ export function ComposeDrawer({ isOpen, onClose, defaultThreadId, defaultEmail, 
                             </div>
                         </div>
                     ) : (
-                        <Textarea
-                            value={body}
-                            onChange={e => setBody(e.target.value)}
-                            className="min-h-[300px] bg-zinc-900 border-zinc-800 focus-visible:ring-zinc-700 font-mono text-sm leading-relaxed text-zinc-300"
-                            placeholder="Type your message..."
-                        />
+                        <div className="space-y-2">
+                            <div className="flex items-center gap-1 p-1.5 bg-zinc-900 rounded-md border border-zinc-800">
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    className={`h-8 w-8 p-0 ${formattingButtons.bold ? 'bg-zinc-800' : ''}`}
+                                    onClick={() => {
+                                        document.execCommand('bold', false);
+                                        setFormattingButtons(prev => ({ ...prev, bold: !prev.bold }));
+                                    }}
+                                >
+                                    <Bold className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    className={`h-8 w-8 p-0 ${formattingButtons.italic ? 'bg-zinc-800' : ''}`}
+                                    onClick={() => {
+                                        document.execCommand('italic', false);
+                                        setFormattingButtons(prev => ({ ...prev, italic: !prev.italic }));
+                                    }}
+                                >
+                                    <Italic className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    className={`h-8 w-8 p-0 ${formattingButtons.underline ? 'bg-zinc-800' : ''}`}
+                                    onClick={() => {
+                                        document.execCommand('underline', false);
+                                        setFormattingButtons(prev => ({ ...prev, underline: !prev.underline }));
+                                    }}
+                                >
+                                    <Underline className="h-4 w-4" />
+                                </Button>
+                                <div className="w-px h-6 bg-zinc-800 mx-1" />
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-8 w-8 p-0"
+                                    onClick={() => fileInputRef.current?.click()}
+                                >
+                                    <Paperclip className="h-4 w-4" />
+                                </Button>
+                                <input
+                                    ref={fileInputRef}
+                                    type="file"
+                                    multiple
+                                    className="hidden"
+                                    onChange={(e) => {
+                                        if (e.target.files) {
+                                            const newAttachments = Array.from(e.target.files).map(file => ({
+                                                name: file.name,
+                                                size: file.size,
+                                                file
+                                            }));
+                                            setAttachments(prev => [...prev, ...newAttachments]);
+                                        }
+                                    }}
+                                />
+                            </div>
+                            <Textarea
+                                value={body}
+                                onChange={e => setBody(e.target.value)}
+                                className="min-h-[300px] bg-zinc-900 border-zinc-800 focus-visible:ring-zinc-700 text-sm leading-relaxed text-zinc-300"
+                                placeholder="Type your message..."
+                            />
+                            {attachments.length > 0 && (
+                                <div className="space-y-2">
+                                    {attachments.map((att, idx) => (
+                                        <div key={idx} className="flex items-center justify-between p-2 bg-zinc-900 rounded-md border border-zinc-800">
+                                            <div className="flex items-center gap-2">
+                                                <Paperclip className="h-4 w-4 text-zinc-400" />
+                                                <div>
+                                                    <p className="text-xs text-zinc-300 font-medium">{att.name}</p>
+                                                    <p className="text-xs text-zinc-500">{(att.size / 1024).toFixed(1)} KB</p>
+                                                </div>
+                                            </div>
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                className="h-6 w-6 p-0 text-zinc-400 hover:text-red-400"
+                                                onClick={() => setAttachments(prev => prev.filter((_, i) => i !== idx))}
+                                            >
+                                                <XCircle className="h-4 w-4" />
+                                            </Button>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
                     )}
                 </CardContent>
                 <CardFooter className="justify-between py-3 border-t border-zinc-900">

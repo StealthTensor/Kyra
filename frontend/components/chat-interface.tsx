@@ -46,7 +46,8 @@ export function ChatInterface() {
         setInput("")
         setIsLoading(true)
         try {
-            const response = await axios.post("http://localhost:8000/api/v1/chat/", {
+            const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
+            const response = await axios.post(`${apiUrl}/chat/`, {
                 query: userMsg.content,
                 user_id: conversationId ? undefined : "default_user",
                 conversation_id: conversationId

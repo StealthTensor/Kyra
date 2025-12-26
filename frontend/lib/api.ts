@@ -1,8 +1,7 @@
 import axios from 'axios';
 import { useAuthStore } from '@/store/useAuthStore';
 
-// In production, use env var. For MVP, hardcode localhost to avoid config drift.
-const BASE_URL = 'http://localhost:8000/api/v1';
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
 
 export const api = axios.create({
     baseURL: BASE_URL,

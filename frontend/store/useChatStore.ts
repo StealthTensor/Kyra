@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { api } from '@/lib/api';
 import { toast } from 'sonner';
+import { useAuthStore } from '@/store/useAuthStore';
 
 interface Message {
     id: string;
@@ -38,10 +39,18 @@ export const useChatStore = create<ChatState>((set, get) => ({
         set({ messages: [...messages, userMsg], isLoading: true });
 
         try {
+            const user = useAuthStore.getState().user;
+
+            if (!user?.id) {
+                toast.error("Please login to chat");
+                set({ isLoading: false });
+                return;
+            }
+
             const response = await api.post('/chat', {
                 query,
-                conversation_id: conversationId, // Backend should create if null
-                user_id: "user_mvp" // Placeholder, in real app backend gets from token
+                conversation_id: conversationId,
+                user_id: user.id
             });
 
             const { response: answer, conversation_id, explanation } = response.data;

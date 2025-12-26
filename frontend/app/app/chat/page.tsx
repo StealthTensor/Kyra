@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useChatStore } from "@/store/useChatStore";
 import { WaveformVisualizer } from "@/components/chat/WaveformVisualizer";
 import { QuickActions } from "@/components/chat/QuickActions";
 import { Input } from "@/components/ui/input";
@@ -9,16 +10,13 @@ import { Mic, Send, Paperclip } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function ChatPage() {
-    const [messages, setMessages] = useState([
-        { id: 1, role: "assistant", text: "I'm ready. What's on your mind?" },
-    ]);
+    const { messages, isLoading, sendMessage } = useChatStore();
     const [input, setInput] = useState("");
 
     const handleSend = () => {
         if (!input.trim()) return;
-        setMessages(prev => [...prev, { id: Date.now(), role: "user", text: input }]);
+        sendMessage(input);
         setInput("");
-        // TODO: Connect to backend
     };
 
     return (
@@ -44,10 +42,15 @@ export default function ChatPage() {
                             className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
                         >
                             <div className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm ${msg.role === 'user'
-                                    ? 'bg-blue-600 text-white rounded-br-none'
-                                    : 'bg-zinc-800 text-zinc-200 rounded-bl-none'
+                                ? 'bg-blue-600 text-white rounded-br-none'
+                                : 'bg-zinc-800 text-zinc-200 rounded-bl-none'
                                 }`}>
-                                {msg.text}
+                                {msg.content}
+                                {msg.role === 'assistant' && msg.reasoning && (
+                                    <div className="mt-2 text-xs text-indigo-300 border-t border-zinc-700/50 pt-2">
+                                        🧠 {msg.reasoning}
+                                    </div>
+                                )}
                             </div>
                         </motion.div>
                     ))}

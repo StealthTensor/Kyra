@@ -18,3 +18,5 @@ class ChatResponse(BaseModel):
     conversation_id: UUID
     conversation_title: str
     sources: List[str] = [] # List of email subjects or IDs used for context
+    intent: Optional[str] = None
+    intent_rejected: bool = False

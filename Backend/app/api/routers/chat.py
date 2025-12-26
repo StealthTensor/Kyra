@@ -9,14 +9,19 @@ router = APIRouter()
 logger = logging.getLogger(__name__)
 
 @router.post("/", response_model=ChatResponse)
-async def chat_endpoint(request: ChatRequest, db: AsyncSession = Depends(get_db)):
+async def chat_endpoint(
+    request: ChatRequest,
+    db: AsyncSession = Depends(get_db),
+    # user: User = Depends(get_current_user)
+):
     """
     Chat with the agent about your emails.
     """
     try:
-        # In a real app we'd get user_id from auth token (Depends(get_current_user))
-        # For MVP we trust the request Body or hardcode if single user
-        # user_id from request or hardcoded for now if not provided
+        from slowapi import Limiter
+        from slowapi.util import get_remote_address
+        limiter = Limiter(key_func=get_remote_address)
+        
         user_id = request.user_id 
         
         response = await chat_service.generate_response(
