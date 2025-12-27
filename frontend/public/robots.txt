@@ -3,4 +3,4 @@ Allow: /
 Disallow: /private/
 Disallow: /api/
 
-Sitemap: https://kyra.ai/sitemap.xml
+Sitemap: https://kyraa.vercel.app/sitemap.xml

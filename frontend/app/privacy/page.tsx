@@ -104,7 +104,7 @@ export default function PrivacyPolicy() {
 
                     <section>
                         <h2 className="text-xl font-semibold text-white mb-3">7. Contact</h2>
-                        <p>For privacy-related inquiries, reach out to StealthTensor at: <a href="mailto:privacy@stealthtensor.io" className="text-indigo-400 hover:text-indigo-300">privacy@stealthtensor.io</a></p>
+                        <p>For privacy-related inquiries, reach out to StealthTensor at: <a href="mailto:rayabharaputrinai@gmail.com" className="text-indigo-400 hover:text-indigo-300">rayabharaputrinai@gmail.com</a></p>
                     </section>
                 </motion.div>
             </div>

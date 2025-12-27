@@ -34,7 +34,7 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
     )
 
 # Set up CORS
-cors_origins = os.getenv("CORS_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000").split(",")
+cors_origins = os.getenv("CORS_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000,https://kyraa.vercel.app").split(",")
 if settings.FRONTEND_URL not in cors_origins:
     cors_origins.append(settings.FRONTEND_URL)
 origins = cors_origins

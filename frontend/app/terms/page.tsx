@@ -105,7 +105,7 @@ export default function TermsOfService() {
 
                     <section>
                         <h2 className="text-xl font-semibold text-white mb-3">10. Contact</h2>
-                        <p>Questions? Reach out: <a href="mailto:legal@stealthtensor.io" className="text-indigo-400 hover:text-indigo-300">legal@stealthtensor.io</a></p>
+                        <p>Questions? Reach out: <a href="mailto:rayabharaputrinai@gmail.com" className="text-indigo-400 hover:text-indigo-300">rayabharaputrinai@gmail.com</a></p>
                     </section>
                 </motion.div>
             </div>

@@ -25,13 +25,13 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "Kyra AI | Enterprise Agent",
+  title: "Kyra AI",
   description: "The B2B Native AI Email OS.",
   manifest: "/manifest.json",
   openGraph: {
     type: "website",
     locale: "en_US",
-    url: "https://kyra.ai",
+    url: "https://kyraa.vercel.app",
     title: "Kyra AI - The Future of Work",
     description: "Automate your inbox with a personal AI agent.",
     siteName: "Kyra AI",
